@@ -1,0 +1,69 @@
+---
+title: "Untitled"
+output: html_document
+keep_md: true  
+---
+ 
+
+```{r, echo=TRUE}
+act <-  read.csv("activity.csv")
+act$date <- as.Date(act$date, format = "%Y-%m-%d")
+actDay <- aggregate(steps ~ date, act, sum, na.action = na.omit)
+library(ggplot2)
+actDay$date <- as.Date(actDay$date, format = "%Y-%m-%d")
+ggplot(data=actDay, aes(date, steps)) + geom_histogram(binwidth=.5, stat="identity", colour="green", fill="pink") + ylim(0, 22000)
+mean(actDay$steps)
+median (actDay$steps)
+```
+
+
+```{r, echo=TRUE}
+actTS <-  aggregate(steps ~ interval, act, mean, na.action = na.omit)
+
+library("lattice")
+library("ggplot2")
+xyplot( steps ~ interval, data = actTS, type ='l', col.line="red")
+
+```
+
+
+```{r, echo=TRUE}
+
+actCopy <- read.csv("activity.csv")
+actCopy$date <- as.Date(actCopy$date, format = "%Y-%m-%d")
+actCopy$newSteps <-  actCopy$steps
+
+
+for (i in 1:nrow(actCopy)) {
+  if (is.na(actCopy[i,"steps"])) {
+    actCopy[i,"newSteps"] <-ceiling( subset(actTS, interval == actCopy[i,"interval"])$steps)
+  } 
+  
+}
+
+actCopyDay <- aggregate(newSteps ~ date, actCopy, sum, na.action = na.omit)
+library(ggplot2)
+actCopyDay$date <- as.Date(actCopyDay$date, format = "%Y-%m-%d")
+ggplot(data=actCopyDay, aes(date, newSteps)) + geom_histogram(binwidth=.5, stat="identity", colour="green", fill="pink") + ylim(0, 22000)   
+
+mean(actCopyDay$newSteps)
+median (actCopyDay$newSteps)
+
+```
+
+
+```{r, echo=TRUE}
+ 
+actCopy$weekday <- weekdays(actCopy$date)
+actCopy$weekdayclassify <- factor( ifelse(actCopy$weekday == "Saturday" 
+                                          | actCopy$weekday == "Sunday",
+                                          "weekend",
+                                          "weekday"),
+                                   levels = c("weekend","weekday"))
+
+actpanel <-  aggregate(newSteps ~ interval + weekdayclassify, actCopy, mean, na.action = na.omit)
+xyplot(newSteps ~ interval  | weekdayclassify, actpanel, type = "b", layout = c(1,2))
+
+
+```
+ 
